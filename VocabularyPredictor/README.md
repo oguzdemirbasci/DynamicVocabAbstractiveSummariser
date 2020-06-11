@@ -1,5 +1,5 @@
 # Dynamic Vocabulary Predictor
-This repository provides PyTorch implementations of the method named NLG-RL proposed by Hashimoto et al. [1] for reinforcement learning for sentence generation with action-space reduction. The vocabulary predictor in version 0.2 of their work is used in this project. 
+This repository provides PyTorch implementations of the method named NLG-RL proposed by Hashimoto et al. [1] for reinforcement learning for sentence generation with action-space reduction. The vocabulary predictor in version 0.2 of their work is modified for larger texts. 
 
 Please visit https://github.com/hassyGo/NLG-RL for the original github repository.
 
