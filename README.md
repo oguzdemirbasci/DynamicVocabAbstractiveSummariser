@@ -1,2 +1,2 @@
-# DynamicVocabAbstractiveSummariser
-Abstractive Summarisation with Constrained Target Vocabularies
+# Abstractive Summarisation with Constrained Target Vocabularies
+
