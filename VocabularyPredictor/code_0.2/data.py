@@ -140,6 +140,7 @@ class Corpus:
                 tokensTarget = lineTarget.split() # w1 w2 ... \n
 
                 if len(tokensSource) > maxLen or len(tokensTarget) > maxLen or len(tokensSource) == 0 or len(tokensTarget) == 0:
+                    #print("passed")
                     continue
 
                 tokenIndicesSource = torch.LongTensor(len(tokensSource))

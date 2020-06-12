@@ -9,6 +9,8 @@ import torch.optim as optim
 import random
 import time
 import argparse
+import os
+import logging
 
 parser = argparse.ArgumentParser(description='Learning vocabulary predictor for machine translation')
 
@@ -27,14 +29,17 @@ parser.add_argument('--dev_source', type = str, required = True,
 parser.add_argument('--dev_target', type = str, required = True,
                     help = 'File path to development data (target sentences)')
 
-parser.add_argument('--model', type = str, default = './params/vocgen.bin',
+parser.add_argument('--data_cat', type=str, default='film', 
+                    help='WikiCatSum categories: Animal, Film or Company')
+
+parser.add_argument('--model', type = str, default = 'vocgen.bin',
                     help = 'File name for saving model parameters')
 
 parser.add_argument('--fs', type = int, default = '2',
                     help = 'Minimum word frequency to construct source vocabulary')
 parser.add_argument('--ft', type = int, default = '2',
                     help = 'Minimum word frequency to construct target vocabulary')
-parser.add_argument('--mlen', type = int, default = '100',
+parser.add_argument('--mlen', type = int, default = '10000',
                     help = 'Maximum length of sentences in training data')
 
 parser.add_argument('--K', type = int, default = '1000',
@@ -67,7 +72,28 @@ sourceTrainFile = args.train_source
 sourceOrigTrainFile = sourceTrainFile
 targetTrainFile = args.train_target
 
-vocGenFile = args.model
+last_path = "/"
+
+if "bow" == sourceTrainFile[-7:-4]:
+    last_path = "_bow/"
+elif "raw" == sourceOrigTrainFile[-7:-4]:
+    last_path = "_raw/"
+
+file_path = './params/' + args.data_cat + "/outputs" + last_path
+
+if not os.path.exists(file_path):
+    os.makedirs(file_path)
+
+dirs = os.listdir(file_path)
+
+if not dirs:
+    exp_no = 0 
+else:
+    exp_no = int(max(os.listdir(file_path))[3:]) + 1
+
+file_path = file_path + "exp" + str(exp_no) + "/"
+
+vocGenFile = file_path + args.model
 
 minFreqSource = args.fs
 minFreqTarget = args.ft
@@ -94,6 +120,9 @@ weightDecay = args.wd
 
 K = args.K
 
+os.makedirs(file_path)
+logging.basicConfig(level=logging.INFO, filename=file_path+"log"+str(exp_no)+".log", format='%(message)s')
+
 torch.set_num_threads(1)
 
 torch.manual_seed(seed)
@@ -113,6 +142,13 @@ print('# of develop sentences:  '+str(len(corpus.devData)))
 print('Random seed: ', str(seed))
 print('K = ', K)
 print()
+
+logging.info('K:' + str(K) + ', dim:' + str(vocGenHiddenDim) + ', mepoch:' + str(maxEpoch) + ', lr:' + str(learningRateVocGen) + ', lrd:' + str(decay) + 
+                ', bs:' + str(batchSize) + ', dp:' + str(dropoutRate) + ', wd:' + str(weightDecay) + ', clip:' + str(gradClip))
+logging.info('')
+logging.info("train src: " + sourceTrainFile.rsplit('/', 1)[-1] + ", train tgt: " + targetTrainFile.rsplit('/', 1)[-1])
+logging.info("dev src: " + sourceDevFile.rsplit('/', 1)[-1] + ", dev tgt: " + targetDevFile.rsplit('/', 1)[-1])
+logging.info('')
 
 vocGen = VocGenerator(vocGenHiddenDim, corpus.targetVoc.size(), corpus.sourceVoc.size(), dropoutRate)
 vocGen.to(device)
@@ -137,6 +173,8 @@ optVocGen = optim.Adagrad(optParams, lr = learningRateVocGen)
 bestDevRecall = -1.0
 prevDevRecall = -1.0
 
+i_epoch = 1
+best_epoc = 0
 for epoch in range(maxEpoch):
     batchProcessed = 0
     
@@ -204,6 +242,7 @@ for epoch in range(maxEpoch):
 
             elif devRecall >= bestDevRecall:
                 bestDevRecall = devRecall
+                best_epoc = i_epoch
 
                 stateDict = vocGen.state_dict()
                 for elem in stateDict:
@@ -211,5 +250,14 @@ for epoch in range(maxEpoch):
                 torch.save(stateDict, vocGenFile)
 
             prevDevRecall = devRecall
+        
+    i_epoch = i_epoch + 1
 
-            
+logging.info("--- Epoch " + str(best_epoc) + ' (Max Recall)')
+logging.info('')
+logging.info("Recall of voc predictor:" + str(bestDevRecall) + '(%)')
+logging.info('')
+logging.info('')
+logging.info("--- Epoch 20")
+logging.info('')
+logging.info("Recall of voc predictor:" + str(devRecall) + '(%)')           
