@@ -67,17 +67,20 @@ class Corpus:
         self.devData = self.buildDataset(sourceDevFile, sourceOrigDevFile, targetDevFile, train = False)
 
         self.unigramWeight = torch.FloatTensor(self.targetVoc.size()).zero_()
-        for d in self.trainData:
-            imap = {i:1 for i in d.targetText}
-            self.unigramWeight[self.targetVoc.eosIndex] += 1.0
-            for i in imap.keys():
-                self.unigramWeight[i] += 1.0
-        self.unigramWeight /= len(self.trainData)
+        
+        if self.trainData:
+            for d in self.trainData:
+                imap = {i:1 for i in d.targetText}
+                self.unigramWeight[self.targetVoc.eosIndex] += 1.0
+                for i in imap.keys():
+                    self.unigramWeight[i] += 1.0
+            self.unigramWeight /= len(self.trainData)
 
-        self.stat = self.calcStat(sourceTrainFile, targetTrainFile)
+            self.stat = self.calcStat(sourceTrainFile, targetTrainFile)
         
     def buildVoc(self, fileName, minFreq, source, maxLen = 100000):
-        assert os.path.exists(fileName)
+        if not os.path.exists(fileName):
+            return
 
         if source:
             voc = self.sourceVoc
@@ -125,8 +128,8 @@ class Corpus:
             voc.padIndex = voc.getTokenIndex(voc.PAD)
             
     def buildDataset(self, sourceFileName, sourceOrigFileName, targetFileName, train, maxLen = 100000):
-        assert os.path.exists(sourceFileName) and os.path.exists(targetFileName)
-        assert os.path.exists(sourceOrigFileName)
+        if not (os.path.exists(sourceFileName) or os.path.exists(targetFileName) or os.path.exists(sourceOrigFileName)):
+            return
         
         with open(sourceFileName, 'r') as fs, open(sourceOrigFileName, 'r') as fsOrig, open(targetFileName, 'r') as ft:
             dataset = []
@@ -140,7 +143,7 @@ class Corpus:
                 tokensTarget = lineTarget.split() # w1 w2 ... \n
 
                 if len(tokensSource) > maxLen or len(tokensTarget) > maxLen or len(tokensSource) == 0 or len(tokensTarget) == 0:
-                    #print("passed")
+                    ############ The lines longer than maxlen are skipped.
                     continue
 
                 tokenIndicesSource = torch.LongTensor(len(tokensSource))
