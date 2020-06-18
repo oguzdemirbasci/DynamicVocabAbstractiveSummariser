@@ -65,17 +65,17 @@ class Corpus:
         self.buildVoc(sourceTrainFile, minFreqSource, source = True)#, maxLen = maxTokenLen)
         self.buildVoc(targetTrainFile, minFreqTarget, source = False)#, maxLen = maxTokenLen)
 
-        if trainPickle[-6:]=="pickle":
-            self.trainData = pickle.load(trainPickle)
+        if trainPickle[-3:]==".pt":
+            self.trainData = torch.load(trainPickle)
         else:
             self.trainData = self.buildDataset(sourceTrainFile, sourceOrigTrainFile, targetTrainFile, train = True, maxLen = maxTokenLen)
-            pickle.dump(self.trainData, open( "trainData.pickle", "wb" ) )
+            torch.save(self.trainData, "trainData.pt")
 
-        if devPickle[-6:]=="pickle":
-            self.devData = pickle.load(devPickle)
+        if devPickle[-3:]==".pt":
+            self.devData = torch.load(devPickle)
         else:
             self.devData = self.devData = self.buildDataset(sourceDevFile, sourceOrigDevFile, targetDevFile, train = False)
-            pickle.dump(self.devData, open( "devData.pickle", "wb" ) )
+            torch.save(self.devData, "devData.pt")
         
 
         self.unigramWeight = torch.FloatTensor(self.targetVoc.size()).zero_()

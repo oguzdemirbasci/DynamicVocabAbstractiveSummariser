@@ -1,2 +1,4 @@
 params
 __pycache__
+*.pt
+*.pickle
