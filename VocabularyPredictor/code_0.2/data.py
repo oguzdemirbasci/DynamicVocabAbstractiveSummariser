@@ -65,7 +65,6 @@ class Corpus:
         self.buildVoc(sourceTrainFile, minFreqSource, source = True)#, maxLen = maxTokenLen)
         self.buildVoc(targetTrainFile, minFreqTarget, source = False)#, maxLen = maxTokenLen)
 
-        print("vocabulary built")
         if trainPickle[-6:]=="pickle":
             self.trainData = pickle.load(trainPickle)
         else:
