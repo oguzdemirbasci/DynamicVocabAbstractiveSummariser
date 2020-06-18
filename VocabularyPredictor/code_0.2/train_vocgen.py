@@ -23,11 +23,15 @@ parser.add_argument('--train_source', type = str, required = True,
                     help = 'File path to training data (source sentences)')
 parser.add_argument('--train_target', type = str, required = True,
                     help = 'File path to training data (target sentences)')
+parser.add_argument('--train_pickle', type = str, default = '',
+                    help = 'File path to preprocessed train dataset')
 
 parser.add_argument('--dev_source', type = str, required = True,
                     help = 'File path to development data (source sentences)')
 parser.add_argument('--dev_target', type = str, required = True,
                     help = 'File path to development data (target sentences)')
+parser.add_argument('--dev_pickle', type = str, default = '',
+                    help = 'File path to preprocessed development dataset')
 
 parser.add_argument('--data_cat', type=str, default='film', 
                     help='WikiCatSum categories: Animal, Film or Company')
@@ -39,7 +43,7 @@ parser.add_argument('--fs', type = int, default = '2',
                     help = 'Minimum word frequency to construct source vocabulary')
 parser.add_argument('--ft', type = int, default = '2',
                     help = 'Minimum word frequency to construct target vocabulary')
-parser.add_argument('--mlen', type = int, default = '100',
+parser.add_argument('--mlen', type = int, default = '10000',
                     help = 'Maximum length of sentences in training data')
 
 parser.add_argument('--K', type = int, default = '1000',
@@ -72,6 +76,9 @@ sourceTrainFile = args.train_source
 sourceOrigTrainFile = sourceTrainFile
 targetTrainFile = args.train_target
 
+trainPickle = args.train_pickle
+devPickle = args.dev_pickle
+
 last_path = "/"
 
 if "bow" == sourceTrainFile[-7:-4]:
@@ -89,7 +96,8 @@ dirs = os.listdir(file_path)
 if not dirs:
     exp_no = 0 
 else:
-    exp_no = int(max(os.listdir(file_path))[3:]) + 1
+    exps = [int(x[3:]) for x in os.listdir(file_path)]
+    exp_no = max(exps) + 1
 
 file_path = file_path + "exp" + str(exp_no) + "/"
 
@@ -132,7 +140,7 @@ torch.cuda.manual_seed(seed)
 
 corpus = Corpus(sourceTrainFile, sourceOrigTrainFile, targetTrainFile,
                 sourceDevFile, sourceOrigDevFile, targetDevFile,
-                minFreqSource, minFreqTarget, maxLen)
+                minFreqSource, minFreqTarget, maxLen, trainPickle, devPickle)
 
 print('Source vocabulary size: '+str(corpus.sourceVoc.size()))
 print('Target vocabulary size: '+str(corpus.targetVoc.size()))

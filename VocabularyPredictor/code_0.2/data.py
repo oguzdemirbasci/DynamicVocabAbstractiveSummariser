@@ -1,5 +1,7 @@
 import os
 import torch
+import pickle
+from joblib import Parallel, delayed, parallel_backend
 
 class Token:
     def __init__(self, str_ = '', count_ = 0):
@@ -56,15 +58,26 @@ class Data:
 
         
 class Corpus:
-    def __init__(self, sourceTrainFile = '', sourceOrigTrainFile = '', targetTrainFile = '', sourceDevFile = '', sourceOrigDevFile = '', targetDevFile = '', minFreqSource = 1, minFreqTarget = 1, maxTokenLen = 100000):
+    def __init__(self, sourceTrainFile = '', sourceOrigTrainFile = '', targetTrainFile = '', sourceDevFile = '', sourceOrigDevFile = '', targetDevFile = '', minFreqSource = 1, minFreqTarget = 1, maxTokenLen = 100000, trainPickle='', devPickle=''):
         self.sourceVoc = Vocabulary()
         self.targetVoc = Vocabulary()
 
         self.buildVoc(sourceTrainFile, minFreqSource, source = True)#, maxLen = maxTokenLen)
         self.buildVoc(targetTrainFile, minFreqTarget, source = False)#, maxLen = maxTokenLen)
 
-        self.trainData = self.buildDataset(sourceTrainFile, sourceOrigTrainFile, targetTrainFile, train = True, maxLen = maxTokenLen)
-        self.devData = self.buildDataset(sourceDevFile, sourceOrigDevFile, targetDevFile, train = False)
+        print("vocabulary built")
+        if trainPickle[-6:]=="pickle":
+            self.trainData = pickle.load(trainPickle)
+        else:
+            self.trainData = self.buildDataset(sourceTrainFile, sourceOrigTrainFile, targetTrainFile, train = True, maxLen = maxTokenLen)
+            pickle.dump(self.trainData, open( "trainData.pickle", "wb" ) )
+
+        if devPickle[-6:]=="pickle":
+            self.devData = pickle.load(devPickle)
+        else:
+            self.devData = self.devData = self.buildDataset(sourceDevFile, sourceOrigDevFile, targetDevFile, train = False)
+            pickle.dump(self.devData, open( "devData.pickle", "wb" ) )
+        
 
         self.unigramWeight = torch.FloatTensor(self.targetVoc.size()).zero_()
         
@@ -130,40 +143,45 @@ class Corpus:
     def buildDataset(self, sourceFileName, sourceOrigFileName, targetFileName, train, maxLen = 100000):
         if not (os.path.exists(sourceFileName) or os.path.exists(targetFileName) or os.path.exists(sourceOrigFileName)):
             return
-        
+
+
         with open(sourceFileName, 'r') as fs, open(sourceOrigFileName, 'r') as fsOrig, open(targetFileName, 'r') as ft:
             dataset = []
             
-            for (lineSource, lineSourceOrig, lineTarget) in zip(fs, fsOrig, ft):
-                tokensSource = lineSource.split() # w1 w2 ... \n
-                if train:
-                    tokensSourceOrig = None
-                else:
-                    tokensSourceOrig = lineSourceOrig.split() # w1 w2 ... \n
-                tokensTarget = lineTarget.split() # w1 w2 ... \n
+            with parallel_backend('threading', n_jobs=-1):
+                Parallel()(delayed(buildDatasetLoop)(self, dataset, train, maxLen, lineSource, lineSourceOrig, lineTarget) for (lineSource, lineSourceOrig, lineTarget) in zip(fs, fsOrig, ft))
 
-                if len(tokensSource) > maxLen or len(tokensTarget) > maxLen or len(tokensSource) == 0 or len(tokensTarget) == 0:
-                    ############ The lines longer than maxlen are skipped.
-                    continue
+            # for (lineSource, lineSourceOrig, lineTarget) in zip(fs, fsOrig, ft):
+            #     tokensSource = lineSource.split() # w1 w2 ... \n
+            #     if train:
+            #         tokensSourceOrig = None
+            #     else:
+            #         tokensSourceOrig = lineSourceOrig.split() # w1 w2 ... \n
+            #     tokensTarget = lineTarget.split() # w1 w2 ... \n
 
-                tokenIndicesSource = torch.LongTensor(len(tokensSource))
-                unkMapSource = {}
-                tokenIndicesTarget = torch.LongTensor(len(tokensTarget))
-                unkMapTarget = {}
+            #     if len(tokensSource) > maxLen or len(tokensTarget) > maxLen or len(tokensSource) == 0 or len(tokensTarget) == 0:
+            #         ############ The lines longer than maxlen are skipped.
+            #         print("lenghth: ", len(tokensSource), " skipped")
+            #         continue
 
-                for i in range(len(tokensSource)):
-                    t = tokensSource[i]
-                    tokenIndicesSource[i] = self.sourceVoc.getTokenIndex(t)
-                    if tokenIndicesSource[i] == self.sourceVoc.unkIndex:
-                        unkMapSource[i] = t
+            #     tokenIndicesSource = torch.LongTensor(len(tokensSource))
+            #     unkMapSource = {}
+            #     tokenIndicesTarget = torch.LongTensor(len(tokensTarget))
+            #     unkMapTarget = {}
 
-                for i in range(len(tokensTarget)):
-                    t = tokensTarget[i]
-                    tokenIndicesTarget[i] = self.targetVoc.getTokenIndex(t)
-                    if tokenIndicesTarget[i] == self.targetVoc.unkIndex:
-                        unkMapTarget[i] = t
+            #     for i in range(len(tokensSource)):
+            #         t = tokensSource[i]
+            #         tokenIndicesSource[i] = self.sourceVoc.getTokenIndex(t)
+            #         if tokenIndicesSource[i] == self.sourceVoc.unkIndex:
+            #             unkMapSource[i] = t
 
-                dataset.append(Data(tokenIndicesSource, unkMapSource, tokenIndicesTarget, unkMapTarget, tokensSourceOrig))
+            #     for i in range(len(tokensTarget)):
+            #         t = tokensTarget[i]
+            #         tokenIndicesTarget[i] = self.targetVoc.getTokenIndex(t)
+            #         if tokenIndicesTarget[i] == self.targetVoc.unkIndex:
+            #             unkMapTarget[i] = t
+
+            #     dataset.append(Data(tokenIndicesSource, unkMapSource, tokenIndicesTarget, unkMapTarget, tokensSourceOrig))
 
                 #if len(dataset) == 10000:
                 #    break
@@ -278,3 +296,36 @@ class Corpus:
         
         return genVocTarget, (genVocInput, genVocInputPos)
 
+
+def buildDatasetLoop(corpus, dataset, train, maxLen, lineSource, lineSourceOrig, lineTarget):
+    tokensSource = lineSource.split() # w1 w2 ... \n
+    if train:
+        tokensSourceOrig = None
+    else:
+        tokensSourceOrig = lineSourceOrig.split() # w1 w2 ... \n
+    tokensTarget = lineTarget.split() # w1 w2 ... \n
+
+    if len(tokensSource) > maxLen or len(tokensTarget) > maxLen or len(tokensSource) == 0 or len(tokensTarget) == 0:
+        ############ The lines longer than maxlen are skipped.
+        print("lenghth: ", len(tokensSource), " skipped")
+    
+    else:
+
+        tokenIndicesSource = torch.LongTensor(len(tokensSource))
+        unkMapSource = {}
+        tokenIndicesTarget = torch.LongTensor(len(tokensTarget))
+        unkMapTarget = {}
+
+        for i in range(len(tokensSource)):
+            t = tokensSource[i]
+            tokenIndicesSource[i] = corpus.sourceVoc.getTokenIndex(t)
+            if tokenIndicesSource[i] == corpus.sourceVoc.unkIndex:
+                unkMapSource[i] = t
+
+        for i in range(len(tokensTarget)):
+            t = tokensTarget[i]
+            tokenIndicesTarget[i] = corpus.targetVoc.getTokenIndex(t)
+            if tokenIndicesTarget[i] == corpus.targetVoc.unkIndex:
+                unkMapTarget[i] = t
+
+        dataset.append(Data(tokenIndicesSource, unkMapSource, tokenIndicesTarget, unkMapTarget, tokensSourceOrig))
