@@ -34,7 +34,7 @@ parser.add_argument('--fs', type = int, default = '2',
                     help = 'Minimum word frequency to construct source vocabulary')
 parser.add_argument('--ft', type = int, default = '2',
                     help = 'Minimum word frequency to construct target vocabulary')
-parser.add_argument('--mlen', type = int, default = '100',
+parser.add_argument('--mlen', type = int, default = '10000',
                     help = 'Maximum length of sentences in training data')
 
 parser.add_argument('--K', type = int, default = '1000',
