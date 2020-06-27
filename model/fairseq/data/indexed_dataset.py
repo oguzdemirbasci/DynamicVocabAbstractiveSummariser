@@ -161,7 +161,7 @@ class IndexedInMemoryDataset(IndexedDataset):
         self.check_index(i)
         tensor_size = self.sizes[self.dim_offsets[i]:self.dim_offsets[i + 1]]
         a = np.empty(tensor_size, dtype=self.dtype)
-        np.copyto(a, self.buffer[self.data_offsets[i]:self.data_offsets[i + 1]])
+        np.copyto(a, np.reshape(self.buffer[self.data_offsets[i]:self.data_offsets[i + 1]], tensor_size))
 
         return torch.from_numpy(a).long()
 
