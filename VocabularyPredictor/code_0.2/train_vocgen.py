@@ -43,7 +43,7 @@ parser.add_argument('--fs', type = int, default = '2',
                     help = 'Minimum word frequency to construct source vocabulary')
 parser.add_argument('--ft', type = int, default = '2',
                     help = 'Minimum word frequency to construct target vocabulary')
-parser.add_argument('--mlen', type = int, default = '10000',
+parser.add_argument('--mlen', type = int, default = '1000',
                     help = 'Maximum length of sentences in training data')
 
 parser.add_argument('--K', type = int, default = '1000',
@@ -124,6 +124,7 @@ seed = args.seed
 ######
 device = torch.device('cuda:'+str(gpuId))
 cpu = torch.device('cpu')
+device = cpu
 ######
 weightDecay = args.wd
 
@@ -139,9 +140,10 @@ random.seed(seed)
 torch.cuda.set_device(gpuId)
 torch.cuda.manual_seed(seed)
 
-corpus = Corpus(sourceTrainFile, sourceOrigTrainFile, targetTrainFile,
-                sourceDevFile, sourceOrigDevFile, targetDevFile,
-                minFreqSource, minFreqTarget, maxLen, trainPickle, devPickle)
+corpus = Corpus(sourceTrainFile = sourceTrainFile, sourceOrigTrainFile = sourceOrigTrainFile, targetTrainFile = targetTrainFile,
+                sourceDevFile = sourceDevFile, sourceOrigDevFile = sourceOrigDevFile, targetDevFile = targetDevFile,
+                minFreqSource = minFreqSource, minFreqTarget = minFreqTarget, maxTokenLen = maxLen,
+                trainPickle = trainPickle, devPickle = devPickle)
 
 print('Source vocabulary size: '+str(corpus.sourceVoc.size()))
 print('Target vocabulary size: '+str(corpus.targetVoc.size()))

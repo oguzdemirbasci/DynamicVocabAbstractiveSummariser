@@ -139,9 +139,9 @@ random.seed(seed)
 torch.cuda.set_device(gpuId)
 torch.cuda.manual_seed(seed)
 
-corpus = Corpus(sourceTrainFile, sourceOrigTrainFile, targetTrainFile,
-                sourceDevFile, sourceOrigDevFile, targetDevFile,
-                minFreqSource, minFreqTarget, maxLen)
+corpus = Corpus(sourceTrainFile = sourceTrainFile, sourceOrigTrainFile = sourceOrigTrainFile, targetTrainFile = targetTrainFile,
+                sourceDevFile = sourceDevFile, sourceOrigDevFile = sourceOrigDevFile, targetDevFile = targetDevFile,
+                minFreqSource = minFreqSource, minFreqTarget = minFreqTarget, maxTokenLen = maxLen)
     
 print('Source vocabulary size: '+str(corpus.sourceVoc.size()))
 print('Target vocabulary size: '+str(corpus.targetVoc.size()))
@@ -265,7 +265,7 @@ for epoch in range(maxEpoch):
         batchInputTarget = batchInputTarget.cuda()
         batchTarget = batchTarget.cuda()
         inputTarget = embedding.getBatchedTargetEmbedding(batchInputTarget)
-        output = encdec(inputTarget, lengthsTarget, lengthsSource, (hn, cn), sourceH, output_list)
+        output = encdec(inputTarget, lengthsTarget, lengthsSource, (hn, cn), sourceH, output_list) 
             
         loss = encdec.softmaxLayer.computeLoss(output, batchTarget)
         totalLoss += loss.data[0]

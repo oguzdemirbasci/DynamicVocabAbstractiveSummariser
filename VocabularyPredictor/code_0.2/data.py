@@ -58,10 +58,15 @@ class Data:
 
         
 class Corpus:
-    def __init__(self, sourceTrainFile = '', sourceOrigTrainFile = '', targetTrainFile = '', sourceDevFile = '', sourceOrigDevFile = '', targetDevFile = '', minFreqSource = 1, minFreqTarget = 1, maxTokenLen = 100000, trainPickle='', devPickle=''):
+    def __init__(self, sourceTrainFile = '', sourceOrigTrainFile = '', targetTrainFile = '', 
+                sourceDevFile = '', sourceOrigDevFile = '', targetDevFile = '',
+                sourceTestFile = None, sourceOrigTestFile = None, targetTestFile = None,
+                trainPickle='', devPickle='', testPickle = '',
+                minFreqSource = 1, minFreqTarget = 1, maxTokenLen = 1000):
         self.sourceVoc = Vocabulary()
         self.targetVoc = Vocabulary()
 
+        # Build only train and validation sets.
         self.buildVoc(sourceTrainFile, minFreqSource, source = True)#, maxLen = maxTokenLen)
         self.buildVoc(targetTrainFile, minFreqTarget, source = False)#, maxLen = maxTokenLen)
 
@@ -74,8 +79,19 @@ class Corpus:
         if devPickle[-3:]==".pt":
             self.devData = torch.load(devPickle)
         else:
+<<<<<<< HEAD
+            self.devData = self.buildDataset(sourceDevFile, sourceOrigDevFile, targetDevFile, train = False)
+            torch.save(self.devData, "devData.pt")
+
+        if testPickle[-3:]==".pt":
+            self.testData = torch.load(testPickle)
+        elif sourceTestFile is not None:
+            self.testData = self.buildDataset(sourceTestFile, sourceOrigTestFile, targetTestFile, train = False)
+            torch.save(self.devData, "testData.pt")
+=======
             self.devData = self.devData = self.buildDataset(sourceDevFile, sourceOrigDevFile, targetDevFile, train = False)
             torch.save(self.devData, "devData.pt")
+>>>>>>> 7876b2c8978580120080d413d88cc85c3e9711e2
         
 
         self.unigramWeight = torch.FloatTensor(self.targetVoc.size()).zero_()
@@ -146,51 +162,16 @@ class Corpus:
 
         with open(sourceFileName, 'r') as fs, open(sourceOrigFileName, 'r') as fsOrig, open(targetFileName, 'r') as ft:
             dataset = []
-            
+            from itertools import islice
             with parallel_backend('threading', n_jobs=-1):
                 Parallel()(delayed(buildDatasetLoop)(self, dataset, train, maxLen, lineSource, lineSourceOrig, lineTarget) for (lineSource, lineSourceOrig, lineTarget) in zip(fs, fsOrig, ft))
-
-            # for (lineSource, lineSourceOrig, lineTarget) in zip(fs, fsOrig, ft):
-            #     tokensSource = lineSource.split() # w1 w2 ... \n
-            #     if train:
-            #         tokensSourceOrig = None
-            #     else:
-            #         tokensSourceOrig = lineSourceOrig.split() # w1 w2 ... \n
-            #     tokensTarget = lineTarget.split() # w1 w2 ... \n
-
-            #     if len(tokensSource) > maxLen or len(tokensTarget) > maxLen or len(tokensSource) == 0 or len(tokensTarget) == 0:
-            #         ############ The lines longer than maxlen are skipped.
-            #         print("lenghth: ", len(tokensSource), " skipped")
-            #         continue
-
-            #     tokenIndicesSource = torch.LongTensor(len(tokensSource))
-            #     unkMapSource = {}
-            #     tokenIndicesTarget = torch.LongTensor(len(tokensTarget))
-            #     unkMapTarget = {}
-
-            #     for i in range(len(tokensSource)):
-            #         t = tokensSource[i]
-            #         tokenIndicesSource[i] = self.sourceVoc.getTokenIndex(t)
-            #         if tokenIndicesSource[i] == self.sourceVoc.unkIndex:
-            #             unkMapSource[i] = t
-
-            #     for i in range(len(tokensTarget)):
-            #         t = tokensTarget[i]
-            #         tokenIndicesTarget[i] = self.targetVoc.getTokenIndex(t)
-            #         if tokenIndicesTarget[i] == self.targetVoc.unkIndex:
-            #             unkMapTarget[i] = t
-
-            #     dataset.append(Data(tokenIndicesSource, unkMapSource, tokenIndicesTarget, unkMapTarget, tokensSourceOrig))
-
-                #if len(dataset) == 10000:
-                #    break
-
+                
         return dataset
 
     def calcStat(self, sourceFileName, targetFileName):
         assert os.path.exists(sourceFileName) and os.path.exists(targetFileName)
 
-        stat = torch.FloatTensor(10000, 10000).fill_(1.0e-08)
+        stat = torch.FloatTensor(25000, 25000).fill_(1.0e-08)
         
         with open(sourceFileName, 'r') as fs, open(targetFileName, 'r') as ft:
             dataset = []
@@ -224,13 +205,14 @@ class Corpus:
         batchInputSource = torch.LongTensor(batchSize, maxLen)
         batchInputSource.fill_(self.sourceVoc.padIndex)
         lengthsSource = []
-        
+     
         for i in range(batchSize):
-            l = len(data[i].sourceText)
-            lengthsSource.append(l)
-            
-            for j in range(l):
-                batchInputSource[i, j] = data[i].sourceText[j]
+            if i < len(data):
+                l = len(data[i].sourceText)
+                lengthsSource.append(l)
+                
+                for j in range(l):
+                    batchInputSource[i, j] = data[i].sourceText[j]
                 
         batchInputSource = batchInputSource.to(device)
 
@@ -248,15 +230,16 @@ class Corpus:
         tokenCount = 0.0
         
         for i in range(batchSize):
-            l = len(data[i].targetText)
-            lengthsTarget.append(l+1)
-            batchInputTarget[i, 0] = self.targetVoc.bosIndex
-            for j in range(l):
-                batchInputTarget[i, j+1] = data[i].targetText[j]
-                batchTarget[targetIndexOffset+j] = data[i].targetText[j]
-            batchTarget[targetIndexOffset+l] = self.targetVoc.eosIndex
-            targetIndexOffset += maxLen
-            tokenCount += (l+1)
+            if i < len(data):
+                l = len(data[i].targetText)
+                lengthsTarget.append(l+1)
+                batchInputTarget[i, 0] = self.targetVoc.bosIndex
+                for j in range(l):
+                    batchInputTarget[i, j+1] = data[i].targetText[j]
+                    batchTarget[targetIndexOffset+j] = data[i].targetText[j]
+                batchTarget[targetIndexOffset+l] = self.targetVoc.eosIndex
+                targetIndexOffset += maxLen
+                tokenCount += (l+1)
 
         return batchInputSource, lengthsSource, batchInputTarget, batchTarget, lengthsTarget, tokenCount, data, maxLen
 
@@ -304,12 +287,16 @@ def buildDatasetLoop(corpus, dataset, train, maxLen, lineSource, lineSourceOrig,
         tokensSourceOrig = lineSourceOrig.split() # w1 w2 ... \n
     tokensTarget = lineTarget.split() # w1 w2 ... \n
 
-    if len(tokensSource) > maxLen or len(tokensTarget) > maxLen or len(tokensSource) == 0 or len(tokensTarget) == 0:
-        ############ The lines longer than maxlen are skipped.
+    if len(tokensSource) == 0 or len(tokensTarget) == 0:
+        # The lines with 0 length are skipped.
         print("lenghth: ", len(tokensSource), " skipped")
-    
+
     else:
 
+        if len(tokensSource) > maxLen or len(tokensTarget) > maxLen:
+            # get first maxLen tokens 
+            tokensSource = tokensSource[:maxLen-1]
+            tokensTarget = tokensTarget[:maxLen-1]
         tokenIndicesSource = torch.LongTensor(len(tokensSource))
         unkMapSource = {}
         tokenIndicesTarget = torch.LongTensor(len(tokensTarget))

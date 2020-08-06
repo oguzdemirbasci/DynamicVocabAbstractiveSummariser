@@ -162,8 +162,13 @@ for batch in batchListDev:
     targetVocGen, inputVocGen = corpus.processBatchInfoVocGen(batchData, smoothing = False, volatile = True, device = device)
     outputVocGen = vocGen(inputVocGen)
 
+<<<<<<< HEAD
+    #tmp = F.sigmoid(outputVocGen.data).data + targetVocGen.data
+    tmp = F.sigmoid(outputVocGen.data).data 
+=======
     tmp = F.sigmoid(outputVocGen.data).data + targetVocGen.data
     # tmp = F.sigmoid(outputVocGen.data).data 
+>>>>>>> 7876b2c8978580120080d413d88cc85c3e9711e2
     #tmp = targetVocGen.data
     tmp[:, corpus.targetVoc.unkIndex] = 1.0
     val, output_list = torch.topk(tmp, k = K)

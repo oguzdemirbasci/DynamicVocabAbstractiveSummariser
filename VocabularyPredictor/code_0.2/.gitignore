@@ -1,5 +1,10 @@
 params
+vocab
 __pycache__
 *.pt
 *.pickle
+<<<<<<< HEAD
+script.sh
+=======
 playground*
+>>>>>>> 7876b2c8978580120080d413d88cc85c3e9711e2
