@@ -34,6 +34,7 @@ class SequenceGenerator(nn.Module):
         search_strategy=None,
         eos=None,
         dvoc_size=None, # parameter for dynamic vocab size
+        enable_dvoc=False,
     ):
         """Generates translations of a given source sentence.
 
@@ -82,6 +83,7 @@ class SequenceGenerator(nn.Module):
         self.temperature = temperature
         self.match_source_len = match_source_len
         self.no_repeat_ngram_size = no_repeat_ngram_size
+        self.enable_dvoc = enable_dvoc
         assert temperature > 0, "--temperature must be greater than 0"
 
         self.search = (
@@ -169,7 +171,7 @@ class SequenceGenerator(nn.Module):
     ):
         net_input = sample["net_input"]
         src_tokens = net_input["src_tokens"]
-        dvoc = net_input["dynamic_vocab"] if "dynamic_vocab" in net_input.keys() else None
+        dvoc = net_input["dynamic_vocab"] if "dynamic_vocab" in net_input.keys() and self.enable_dvoc else None
     
         # length of the source text being the character length except EndOfSentence and pad
         src_lengths = (
@@ -199,6 +201,8 @@ class SequenceGenerator(nn.Module):
         new_order = torch.arange(bsz).view(-1, 1).repeat(1, beam_size).view(-1)
         new_order = new_order.to(src_tokens.device).long()
         encoder_outs = self.model.reorder_encoder_out(encoder_outs, new_order)
+        dvoc = self.model.reorder_dvoc(dvoc, new_order)
+
         # ensure encoder_outs is a List.
         assert encoder_outs is not None
 
@@ -259,6 +263,7 @@ class SequenceGenerator(nn.Module):
                 encoder_outs = self.model.reorder_encoder_out(
                     encoder_outs, reorder_state
                 )
+                dvoc = self.model.reorder_dvoc(dvoc, reorder_state)
 
             lprobs, avg_attn_scores = self.model.forward_decoder(
                 tokens[:, : step + 1], encoder_outs, self.temperature, dynamic_vocab = dvoc
@@ -718,19 +723,26 @@ class EnsembleModel(nn.Module):
         log_probs = []
         avg_attn: Optional[Tensor] = None
         encoder_out: Optional[EncoderOut] = None
+        dvoc: Optional[Tensor] = None
+
         for i, model in enumerate(self.models):
             if self.has_encoder():
                 encoder_out = encoder_outs[i]
+            
+            dvoc_enable = len(dynamic_vocab) > i
+
+            dvoc = dynamic_vocab[i] if dvoc_enable else None
+
             # decode each model
             if self.has_incremental_states():
                 decoder_out = model.decoder.forward(
                     tokens,
                     encoder_out=encoder_out,
                     incremental_state=self.incremental_states[i],
-                    dynamic_vocab=dynamic_vocab,
+                    dynamic_vocab=dvoc,
                 )
             else:
-                decoder_out = model.decoder.forward(tokens, encoder_out=encoder_out, dynamic_vocab=dynamic_vocab)
+                decoder_out = model.decoder.forward(tokens, encoder_out=encoder_out, dynamic_vocab=dvoc)
 
             attn: Optional[Tensor] = None
             decoder_len = len(decoder_out)
@@ -794,6 +806,18 @@ class EnsembleModel(nn.Module):
         return new_outs
 
     @torch.jit.export
+    def reorder_dvoc(self, dvoc, new_order):
+        new_dvoc = []
+        if dvoc is None:
+            return new_dvoc
+        for i, model in enumerate(self.models):
+            assert dvoc is not None
+            new_dvoc.append(
+                dvoc.index_select(0, new_order) if not isinstance(dvoc, list) else dvoc[i].index_select(0, new_order)
+            )
+        return new_dvoc
+
+    @torch.jit.export
     def reorder_incremental_state(self, new_order):
         if not self.has_incremental_states():
             return
@@ -852,6 +876,7 @@ class SequenceGeneratorWithAlignment(SequenceGenerator):
 
     def _prepare_batch_for_alignment(self, sample, hypothesis):
         src_tokens = sample["net_input"]["src_tokens"]
+        # dvoc = sample["net_input"]["dynamic_vocab"] if 'dynamic_vocab' in sample["net_input"].keys() else None
         bsz = src_tokens.shape[0]
         src_tokens = (
             src_tokens[:, None, :]
@@ -859,6 +884,13 @@ class SequenceGeneratorWithAlignment(SequenceGenerator):
             .contiguous()
             .view(bsz * self.beam_size, -1)
         )
+        # if dvoc is not None:
+        #     dvoc = (
+        #         dvoc[:, None, :]
+        #         .expand(-1, self.beam_size, -1)
+        #         .contiguous()
+        #         .view(bsz * self.beam_size, -1)
+        #     )
         src_lengths = sample["net_input"]["src_lengths"]
         src_lengths = (
             src_lengths[:, None]
@@ -880,7 +912,7 @@ class SequenceGeneratorWithAlignment(SequenceGenerator):
             self.left_pad_target,
             move_eos_to_beginning=False,
         )
-        return src_tokens, src_lengths, prev_output_tokens, tgt_tokens
+        return src_tokens, src_lengths, prev_output_tokens, tgt_tokens, 
 
 
 class EnsembleModelWithAlignment(EnsembleModel):

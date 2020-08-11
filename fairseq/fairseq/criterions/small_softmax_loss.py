@@ -31,8 +31,6 @@ class SmallSoftmaxCriterion(FairseqCriterion):
         decoder_output = net_output[0].view(-1, net_output[0].size(-1)) # reshape decoder_output
         target = sample['target_dvoc_indices'].view(-1) # get and reshape target
         loss = model.decoder.dvoc_layer.computeLoss(decoder_output, target) # compute loss
-        if torch.isnan(loss):
-            print(decoder_output.data) 
         sample_size = sample['target'].size(0) if self.sentence_avg else sample['ntokens']
         loss /= sample_size
         logging_output = {
@@ -60,9 +58,9 @@ class SmallSoftmaxCriterion(FairseqCriterion):
         rnd = torch.FloatTensor(1).uniform_(0.0, 1.0)[0]
             
         def convert_back(sampled_index):
-            for i, s in enumerate(sampledIndex):
-                sampledIndex[i] = dvoc[i, s]
-            return sampledIndex.data
+            for i, s in enumerate(sampled_index):
+                sampled_index[i] = dvoc[i, s]
+            return sampled_index.data
             
         if rnd <= greedyProb:
             maxProb, sampledIndex = torch.max(decoder_out, dim = 1)

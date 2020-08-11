@@ -232,7 +232,7 @@ class DvocSummarisationTask(FairseqTask):
         # Dynamic vocab settings
         parser.add_argument('--enable-dvoc', action='store_true',
                             help='enable dynamic vocabularies (default False)')
-        parser.add_argument('--dvoc-K', default=3000, type=int, metavar='N',
+        parser.add_argument('--dvoc-K', default=None, type=int, metavar='N',
                             help='Top K selected vocabulary. (should be the same as voc generator.)')                    
         # fmt: on
 
@@ -320,6 +320,11 @@ class DvocSummarisationTask(FairseqTask):
             self.sequence_generator = self.build_generator([model], Namespace(**gen_args))
         return model
     
+    def build_generator(self, models, args):
+        generator = super().build_generator(models, args)
+        generator.vocab_size = len(self.target_dictionary) if args.dvoc_K is None else args.dvoc_K + 1
+        return generator
+
     def train_step(
         self, sample, model, criterion, optimizer, update_num, ignore_grad=False
     ):
@@ -352,6 +357,30 @@ class DvocSummarisationTask(FairseqTask):
                 logging_output['_bleu_totals_' + str(i)] = bleu.totals[i]
         return loss, sample_size, logging_output
 
+    def inference_step(self, generator, models, sample, prefix_tokens=None):
+        finalized = super().inference_step(generator, models, sample, prefix_tokens)
+        dvocs = sample['net_input']['dynamic_vocab']
+
+        def convert_tokens_to_target_indices(finalized):
+            if self.enable_dvoc:
+                def convert_back(tokens, dvoc):
+                    for i, s in enumerate(tokens):
+                        tokens[i] = dvoc[s]
+
+                def iterate_over_list(element, dvoc):
+                    if isinstance(element, list):
+                        for e in element:
+                            iterate_over_list(e, dvoc)
+                    elif 'tokens' in element.keys():
+                        # element['tokens'] =
+                        convert_back(element['tokens'], dvoc)
+
+                for f, dvoc in zip(finalized, dvocs):
+                    iterate_over_list(f, dvoc)
+
+        convert_tokens_to_target_indices(finalized)
+        return finalized
+        
     def reduce_metrics(self, logging_outputs, criterion):
         super().reduce_metrics(logging_outputs, criterion)
         if self.args.eval_bleu:
@@ -405,7 +434,7 @@ class DvocSummarisationTask(FairseqTask):
         return self.tgt_dict
 
     def _inference_with_bleu(self, generator, sample, model):
-        import sacrebleu
+        import sacrebleu 
 
         def decode(toks, escape_unk=False):
             s = self.tgt_dict.string(

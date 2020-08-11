@@ -620,6 +620,10 @@ def add_generation_args(parser):
     # special decoding format for advanced decoding.
     group.add_argument('--decoding-format', default=None, type=str, choices=['unigram', 'ensemble', 'vote', 'dp', 'bs'])
     # fmt: on
+
+    # argument for enabling rouge scores
+    group.add_argument('--compute-rouge', action='store_true',
+                        help='compute rouge scores')
     return group
 
 

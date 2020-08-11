@@ -550,7 +550,6 @@ class FConvDecoder(FairseqIncrementalDecoder):
             if self.enable_dvoc:
                 if dynamic_vocab is not None and self.dvoc_layer is not None:
                     x = self.dvoc_layer(x, dynamic_vocab) # (1 x n x out_embed_dim) -> (1 x n x dvoc_K)
-                    x = self._flatten(x)
             else:
                 x = F.dropout(x, p=self.dropout, training=self.training)
                 x = self.fc3(x)
