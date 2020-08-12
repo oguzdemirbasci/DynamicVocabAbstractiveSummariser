@@ -131,3 +131,5 @@ data-bin-old/
 
 # Experimental Folder
 experimental/*
+
+results/*
