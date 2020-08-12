@@ -24,5 +24,6 @@ CUDA_LAUNCH_BLOCKING=1 python train.py ./data-bin --num-workers 10 --arch fconv 
 
 CUDA_LAUNCH_BLOCKING=1 python generate.py ./data-bin --path $SAVEDIR/checkpoint_best.pt --num-workers 10 \
       --task dvoc_summarisation --skip-invalid-size-inputs-valid-test --optimizer nag \
-      --max-target-positions 200 --max-source-positions 800 --max-tokens 1000 --update-freq 4 \
-      --beam 5 --gen-subset valid --compute-rouge --results-path $RESULTDIR
+      --max-target-positions 200 --max-source-positions 800 --max-tokens 4000 \
+      --beam 5 --gen-subset valid --compute-rouge --results-path $RESULTDIR \
+      --enable-dvoc --dvoc-K 3000 --truncate-source --truncate-target
