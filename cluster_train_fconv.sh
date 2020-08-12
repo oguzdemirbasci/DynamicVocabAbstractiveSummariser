@@ -25,7 +25,7 @@ echo ${dt}
 # Env variables
 export STUDENT_ID=${USER}
 if [ -d "/disk/scratch/" ]; then
-    export SCRATCH_HOME="/disk/scratch/${STUDENT_ID}"
+    export SCRATCH_HOME="/disk/scratch/${STUDENT_ID}" 
 fi
 if [ -d "/disk/scratch1/" ]; then
     export SCRATCH_HOME="/disk/scratch1/${STUDENT_ID}"
