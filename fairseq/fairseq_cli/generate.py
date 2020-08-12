@@ -14,7 +14,9 @@ import sys
 
 import torch
 
-from fairseq import bleu, checkpoint_utils, options, tasks, utils
+import codecs
+
+from fairseq import bleu, rouge, checkpoint_utils, options, tasks, utils
 from fairseq.logging import progress_bar
 from fairseq.logging.meters import StopwatchMeter, TimeMeter
 from fairseq.data import encoders
@@ -44,6 +46,14 @@ def _main(args, output_file):
         stream=output_file,
     )
     logger = logging.getLogger('fairseq_cli.generate')
+
+    if args.compute_rouge:
+        gold_path = os.path.join(args.results_path, args.gen_subset + '.gold')
+        can_path = os.path.join(args.results_path, args.gen_subset + '.candidate')
+        raw_src_path = os.path.join(args.results_path, args.gen_subset + '.raw_src')
+        gold_out_file = codecs.open(gold_path, 'w', 'utf-8')
+        can_out_file = codecs.open(can_path, 'w', 'utf-8')
+        src_out_file = codecs.open(raw_src_path, 'w', 'utf-8')
 
     utils.import_user_module(args)
 
@@ -259,6 +269,19 @@ def _main(args, output_file):
             else:
                 logger.warning("If you are using BPE on the target side, the BLEU score is computed on BPE tokens, not on proper words.  Use --sacrebleu for standard 13a BLEU tokenization")
         logger.info('Generate {} with beam={}: {}'.format(args.gen_subset, args.beam, scorer.result_string()))
+
+    def _report_rouge(gold_path, can_path):
+        logger.info("Calculating Rouge")
+        results_dict = rouge.test_rouge(args.temp_dir, can_path, gold_path)
+        return results_dict
+
+    if args.compute_rouge:
+        can_out_file.close()
+        gold_out_file.close()
+        src_out_file.close()
+        rouges = _report_rouge(gold_path, can_path)
+        logger.info('Rouges from checkpoint %s \n%s' % (args.path.split('.pt')[0],
+            rouge.rouge_results_to_str(rouges)))
 
     return scorer
 
