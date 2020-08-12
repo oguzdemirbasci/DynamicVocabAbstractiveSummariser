@@ -1,7 +1,7 @@
 #!/bin/sh
 # train script
 
-# DATAPATH='/home/oguz/Documents/thesis/WikiCatSum/film_tok_min5_L7.5k'
+# DATAPATH='../WikiCatSum/film_tok_min5_L7.5k'
 # python preprocess.py -s src -t tgt \
 #     --trainpref $DATAPATH/train --validpref $DATAPATH/valid --testpref $DATAPATH/test \
 #     --train_dv_path $DATAPATH/train --valid_dv_path $DATAPATH/valid --test_dv_path $DATAPATH/test \

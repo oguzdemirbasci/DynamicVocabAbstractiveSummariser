@@ -303,12 +303,12 @@ class DynamicVocabularyDataset(FairseqDataset):
     def num_tokens(self, index):
         """Return the number of tokens in a sample. This value is used to
         enforce ``--max-tokens`` during batching."""
-        return max(self.src_sizes[index], self.tgt_sizes[index] if self.tgt_sizes is not None else 0, self.dvoc_sizes[index] if self.dvoc_sizes is not None else 0)
+        return max(self.src_sizes[index], self.tgt_sizes[index] if self.tgt_sizes is not None else 0)
 
     def size(self, index):
         """Return an example's size as a float or tuple. This value is used when
         filtering a dataset with ``--max-positions``."""
-        return (self.src_sizes[index], self.tgt_sizes[index] if self.tgt_sizes is not None else 0, self.dvoc_sizes[index] if self.dvoc_sizes is not None else 0)
+        return (self.src_sizes[index], self.tgt_sizes[index] if self.tgt_sizes is not None else 0)
 
     def ordered_indices(self):
         """Return an ordered list of indices. Batches will be constructed based
