@@ -79,7 +79,6 @@ class Corpus:
         if devPickle[-3:]==".pt":
             self.devData = torch.load(devPickle)
         else:
-<<<<<<< HEAD
             self.devData = self.buildDataset(sourceDevFile, sourceOrigDevFile, targetDevFile, train = False)
             torch.save(self.devData, "devData.pt")
 
@@ -88,10 +87,6 @@ class Corpus:
         elif sourceTestFile is not None:
             self.testData = self.buildDataset(sourceTestFile, sourceOrigTestFile, targetTestFile, train = False)
             torch.save(self.devData, "testData.pt")
-=======
-            self.devData = self.devData = self.buildDataset(sourceDevFile, sourceOrigDevFile, targetDevFile, train = False)
-            torch.save(self.devData, "devData.pt")
->>>>>>> 7876b2c8978580120080d413d88cc85c3e9711e2
         
 
         self.unigramWeight = torch.FloatTensor(self.targetVoc.size()).zero_()
