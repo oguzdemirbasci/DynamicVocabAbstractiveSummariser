@@ -5,8 +5,8 @@
 #SBATCH -n 4	  # tasks requested
 #SBATCH --gres=gpu:4  # use 4 GPU
 #SBATCH --mem=11400  # memory in Mb
-#SBATCH -t 240:00:00  # time requested in hour:minute:seconds
-#SBATCH --job-name=cnndmfp16
+#SBATCH -t 96:00:00  # time requested in hour:minute:seconds
+#SBATCH --job-name=fconv_train
 
 set -e # fail fast
 echo ${USER}
