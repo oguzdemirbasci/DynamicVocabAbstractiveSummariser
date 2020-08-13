@@ -7,6 +7,7 @@
 #SBATCH --mem=11400  # memory in Mb
 #SBATCH -t 36:00:00  # time requested in hour:minute:seconds
 #SBATCH --job-name=lng_fconv_train
+#SBATCH --partition=General_Usage
 
 set -e # fail fast
 echo ${USER}
