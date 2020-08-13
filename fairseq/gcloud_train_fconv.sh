@@ -1,6 +1,7 @@
 #!/bin/sh
 # train script
 
+source /opt/miniconda3/etc/profile.d/conda.sh
 conda activate abs
 
 SAVEDIR='./checkpoints/fconv'
