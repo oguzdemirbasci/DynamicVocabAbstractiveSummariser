@@ -7,6 +7,7 @@
 #SBATCH --mem=11400  # memory in Mb
 #SBATCH -t 8:00:00  # time requested in hour:minute:seconds
 #SBATCH --job-name=8fconv_train
+#SBATCH --partition=CDT_Compute
 
 set -e # fail fast
 echo ${USER}
