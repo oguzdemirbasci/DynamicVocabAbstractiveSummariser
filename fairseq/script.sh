@@ -13,12 +13,12 @@ CUDA_LAUNCH_BLOCKING=1 python train.py ./data-bin --num-workers 10 --arch fconv_
       --max-tokens 1000 --update-freq 4 --save-dir /media/oguz/Storage/thesis/checkpoints/dvocsum  --keep-best-checkpoints 5 \
       --optimizer nag --criterion small_softmax --enable-dvoc --dvoc-K 3000 --truncate-source --truncate-target
 
-SAVEDIR='./checkpoints/fconv'
-RESULTDIR='./results/fconv'
+SAVEDIR='/media/oguz/Storage/thesis/checkpoints/fconv'
+RESULTDIR='/media/oguz/Storage/thesis/results/fconv'
 
-CUDA_LAUNCH_BLOCKING=1 python train.py ./data-bin --num-workers 10 --arch fconv --lr 0.25 --clip-norm 0.1 --dropout 0.2 \
+CUDA_LAUNCH_BLOCKING=1 python train.py ./data-bin --num-workers 12 --arch fconv_dvoc --lr 0.25 --clip-norm 0.1 --dropout 0.2 \
       --task dvoc_summarisation --skip-invalid-size-inputs-valid-test --max-target-positions 200 --max-source-positions 800 \
-      --max-tokens 1000 --update-freq 4 --save-dir $SAVEDIR --keep-best-checkpoints 5 \
+      --max-tokens 1000 --update-freq 4 --save-dir $SAVEDIR \
       --optimizer nag --criterion cross_entropy --truncate-source --truncate-target
 
 

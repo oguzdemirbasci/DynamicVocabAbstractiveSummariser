@@ -44,7 +44,7 @@ export EXP_ROOT="${CLUSTER_HOME}/thesis/fairseq"
 export EXEC_ROOT="${EXP_ROOT}"
 export EXEC_DATA="${EXP_ROOT}/data-bin"
 
-MODEL_NAME=fconv
+MODEL_NAME=fconv_dvoc
 
 MODEL_PATH=$SCRATCH_HOME/checkpoints/$MODEL_NAME
 mkdir -p "${MODEL_PATH}"
