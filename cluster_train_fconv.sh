@@ -2,11 +2,12 @@
 #SBATCH -o /home/%u/slurm_logs/slurm-%A.out
 #SBATCH -e /home/%u/slurm_logs/slurm-%A.out
 #SBATCH -N 1	  # nodes requested
-#SBATCH -n 2	  # tasks requested
+#SBATCH -n 4	  # tasks requested
 #SBATCH --gres=gpu:4  # use 4 GPU
 #SBATCH --mem=11400  # memory in Mb
 #SBATCH -t 96:00:00  # time requested in hour:minute:seconds
 #SBATCH --job-name=fconv_train
+#SBATCH -p CDT_Compute
 
 set -e # fail fast
 echo ${USER}
