@@ -201,7 +201,7 @@ class SequenceGenerator(nn.Module):
         new_order = torch.arange(bsz).view(-1, 1).repeat(1, beam_size).view(-1)
         new_order = new_order.to(src_tokens.device).long()
         encoder_outs = self.model.reorder_encoder_out(encoder_outs, new_order)
-        dvoc = self.model.reorder_dvoc(dvoc, new_order)
+        dvoc = self.model.reorder_dvoc(dvoc, new_order, self.enable_dvoc)
 
         # ensure encoder_outs is a List.
         assert encoder_outs is not None
@@ -263,7 +263,7 @@ class SequenceGenerator(nn.Module):
                 encoder_outs = self.model.reorder_encoder_out(
                     encoder_outs, reorder_state
                 )
-                dvoc = self.model.reorder_dvoc(dvoc, reorder_state)
+                dvoc = self.model.reorder_dvoc(dvoc, reorder_state, self.enable_dvoc)
 
             lprobs, avg_attn_scores = self.model.forward_decoder(
                 tokens[:, : step + 1], encoder_outs, self.temperature, dynamic_vocab = dvoc
@@ -806,9 +806,9 @@ class EnsembleModel(nn.Module):
         return new_outs
 
     @torch.jit.export
-    def reorder_dvoc(self, dvoc, new_order):
+    def reorder_dvoc(self, dvoc, new_order, enable_dvoc):
         new_dvoc = []
-        if dvoc is None:
+        if not enable_dvoc:
             return new_dvoc
         for i, model in enumerate(self.models):
             assert dvoc is not None
