@@ -621,6 +621,18 @@ def base_architecture(args):
     args.decoder_attention = getattr(args, 'decoder_attention', 'True')
     args.share_input_output_embed = getattr(args, 'share_input_output_embed', False)
 
+@register_model_architecture('fconv', 'fconv_baseline')
+def base_architecture(args):
+    args.dropout = getattr(args, 'dropout', 0.1)
+    args.encoder_embed_dim = getattr(args, 'encoder_embed_dim', 512)
+    args.encoder_embed_path = getattr(args, 'encoder_embed_path', None)
+    args.encoder_layers = getattr(args, 'encoder_layers', '[(512, 3)] * 4')
+    args.decoder_embed_dim = getattr(args, 'decoder_embed_dim', 512)
+    args.decoder_embed_path = getattr(args, 'decoder_embed_path', None)
+    args.decoder_layers = getattr(args, 'decoder_layers', '[(512, 3)] * 4')
+    args.decoder_out_embed_dim = getattr(args, 'decoder_out_embed_dim', 256)
+    args.decoder_attention = getattr(args, 'decoder_attention', 'True')
+    args.share_input_output_embed = getattr(args, 'share_input_output_embed', False)
 
 @register_model_architecture('fconv', 'fconv_iwslt_de_en')
 def fconv_iwslt_de_en(args):
