@@ -465,7 +465,7 @@ class FConvDecoder(FairseqIncrementalDecoder):
             self.fc2 = Linear(in_channels, out_embed_dim)
             if self.enable_dvoc:
                 self.dvoc_layer = SmallSoftmax(out_embed_dim, num_embeddings)
-                self.fc4 = Linear(dvoc_k+1, out_embed_dim)
+                self.fc4 = nn.Linear(dvoc_k+1, out_embed_dim)
             if share_embed:
                 assert out_embed_dim == embed_dim, \
                     "Shared embed weights implies same dimensions " \
