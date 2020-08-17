@@ -808,7 +808,7 @@ class EnsembleModel(nn.Module):
     @torch.jit.export
     def reorder_dvoc(self, dvoc, new_order):
         new_dvoc = []
-        if dvoc is None or not self.enable_dvoc:
+        if dvoc is None:
             return new_dvoc
         for i, model in enumerate(self.models):
             assert dvoc is not None
