@@ -339,12 +339,6 @@ class DvocSummarisationTask(FairseqTask):
 
     def valid_step(self, sample, model, criterion):
         loss, sample_size, logging_output = super().valid_step(sample, model, criterion)
-        # if not isinstance(criterion, SmallSoftmaxCriterion):
-        #     loss, sample_size, logging_output = super().valid_step(sample, model, criterion)
-        # else:
-        #     model.eval()
-        #     with torch.no_grad():
-        #         loss, sample_size, logging_output = criterion.validation_forward(model, sample)
         if self.args.eval_bleu:
             bleu = self._inference_with_bleu(self.sequence_generator, sample, model)
             logging_output['_bleu_sys_len'] = bleu.sys_len
@@ -377,7 +371,6 @@ class DvocSummarisationTask(FairseqTask):
 
                 for f, dvoc in zip(finalized, dvocs):
                     iterate_over_list(f, dvoc)
-
         convert_tokens_to_target_indices(finalized)
         return finalized
         

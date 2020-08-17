@@ -51,9 +51,13 @@ def _main(args, output_file):
         gold_path = os.path.join(args.results_path, args.gen_subset + '.gold')
         can_path = os.path.join(args.results_path, args.gen_subset + '.candidate')
         raw_src_path = os.path.join(args.results_path, args.gen_subset + '.raw_src')
+        temp_dir = os.path.join(args.results_path, args.gen_subset + '_temp/')
         gold_out_file = codecs.open(gold_path, 'w', 'utf-8')
         can_out_file = codecs.open(can_path, 'w', 'utf-8')
         src_out_file = codecs.open(raw_src_path, 'w', 'utf-8')
+
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
 
     utils.import_user_module(args)
 
@@ -272,7 +276,7 @@ def _main(args, output_file):
 
     def _report_rouge(gold_path, can_path):
         logger.info("Calculating Rouge")
-        results_dict = rouge.test_rouge(args.temp_dir, can_path, gold_path)
+        results_dict = rouge.test_rouge(temp_dir, can_path, gold_path)
         return results_dict
 
     if args.compute_rouge:
