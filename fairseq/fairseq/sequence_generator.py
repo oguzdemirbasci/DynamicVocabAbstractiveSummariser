@@ -265,8 +265,8 @@ class SequenceGenerator(nn.Module):
                 )
                 dvoc = self.model.reorder_dvoc(dvoc, reorder_state, self.enable_dvoc)
                 
-                print('encoder outs', encoder_outs.size())
-                print('dvoc', dvoc.size())
+                print('encoder outs', encoder_outs[0].size())
+                print('dvoc', dvoc[0].size())
             dvoc_pass = dvoc[0][:, : step + 1] if self.enable_dvoc else dvoc
             lprobs, avg_attn_scores = self.model.forward_decoder(
                 tokens[:, : step + 1], encoder_outs, self.temperature, dynamic_vocab = dvoc
