@@ -171,6 +171,7 @@ class SequenceGenerator(nn.Module):
     ):
         net_input = sample["net_input"]
         src_tokens = net_input["src_tokens"]
+        print('src_tokens', src_tokens)
         dvoc = net_input["dynamic_vocab"] if "dynamic_vocab" in net_input.keys() and self.enable_dvoc else None
     
         # length of the source text being the character length except EndOfSentence and pad
@@ -732,8 +733,6 @@ class EnsembleModel(nn.Module):
             dvoc_enable = len(dynamic_vocab) > i
 
             dvoc = dynamic_vocab[i] if dvoc_enable else None
-
-            print('tokens', tokens)
             
             # decode each model
             if self.has_incremental_states():
