@@ -371,7 +371,7 @@ class DvocSummarisationTask(FairseqTask):
 
                 for f, dvoc in zip(finalized, dvocs):
                     iterate_over_list(f, dvoc)
-        convert_tokens_to_target_indices(finalized)
+        # convert_tokens_to_target_indices(finalized)
         return finalized
         
     def reduce_metrics(self, logging_outputs, criterion):
