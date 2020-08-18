@@ -171,7 +171,6 @@ class SequenceGenerator(nn.Module):
     ):
         net_input = sample["net_input"]
         src_tokens = net_input["src_tokens"]
-        print('src_tokens', src_tokens)
         dvoc = net_input["dynamic_vocab"] if "dynamic_vocab" in net_input.keys() and self.enable_dvoc else None
     
         # length of the source text being the character length except EndOfSentence and pad
@@ -265,7 +264,7 @@ class SequenceGenerator(nn.Module):
                     encoder_outs, reorder_state
                 )
                 dvoc = self.model.reorder_dvoc(dvoc, reorder_state, self.enable_dvoc)
-
+            print(tokens)
             lprobs, avg_attn_scores = self.model.forward_decoder(
                 tokens[:, : step + 1], encoder_outs, self.temperature, dynamic_vocab = dvoc
             )
