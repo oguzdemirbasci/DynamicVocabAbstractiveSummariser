@@ -455,7 +455,7 @@ class FConvDecoder(FairseqIncrementalDecoder):
             layer_in_channels.append(out_channels)
 
         self.adaptive_softmax = None
-        self.fc2 = self.fc3 = self.dvoc_layer = self.fc4 = None
+        self.fc2 = self.fc3 = self.dvoc_layer = None
 
         if adaptive_softmax_cutoff is not None:
             assert not share_embed
@@ -464,8 +464,7 @@ class FConvDecoder(FairseqIncrementalDecoder):
         else:
             self.fc2 = Linear(in_channels, out_embed_dim)
             if self.enable_dvoc:
-                self.dvoc_layer = SmallSoftmax(out_embed_dim, num_embeddings)
-                self.fc4 = nn.Linear(dvoc_k+1, out_embed_dim)
+                self.dvoc_layer = SmallSoftmax(in_channels, num_embeddings)
             if share_embed:
                 assert out_embed_dim == embed_dim, \
                     "Shared embed weights implies same dimensions " \
@@ -543,16 +542,16 @@ class FConvDecoder(FairseqIncrementalDecoder):
         # T x B x C -> B x T x C
         x = self._transpose_if_training(x, incremental_state)
 
-        # project back to size of vocabulary if not using adaptive softmax
-        if self.fc2 is not None and self.fc3 is not None:
-            x = self.fc2(x)
-
-            if self.enable_dvoc:
-                if dynamic_vocab is not None and self.dvoc_layer is not None:
-                    x = self.dvoc_layer(x, dynamic_vocab) # (1 x n x out_embed_dim) -> (1 x n x dvoc_K)
-            else:
+        if self.enable_dvoc:
+            if dynamic_vocab is not None and self.dvoc_layer is not None:
                 x = F.dropout(x, p=self.dropout, training=self.training)
-                x = self.fc3(x)
+                x = self.dvoc_layer(x, dynamic_vocab) # (1 x n x out_embed_dim) -> (1 x n x dvoc_K)
+
+        # project back to size of vocabulary if not using adaptive softmax
+        elif self.fc2 is not None and self.fc3 is not None:
+            x = self.fc2(x)
+            x = F.dropout(x, p=self.dropout, training=self.training)
+            x = self.fc3(x)
         return x, avg_attn_scores
 
     def _flatten(self, bldTensor):

@@ -27,12 +27,22 @@ class SmallSoftmaxCriterion(FairseqCriterion):
         2) the sample size, which is used as the denominator for the gradient
         3) logging outputs to display while training
         """
-        net_output = model(**sample['net_input']) # net_output = (decoder_output, avg_attn_scores)
-        decoder_output = net_output[0].view(-1, net_output[0].size(-1)) # reshape decoder_output
-        target = sample['target_dvoc_indices'].view(-1) # get and reshape target
-        loss = model.decoder.dvoc_layer.computeLoss(decoder_output, target) # compute loss
+        # net_output = model(**sample['net_input']) # net_output = (decoder_output, avg_attn_scores)
+        # decoder_output = net_output[0].view(-1, net_output[0].size(-1)) # reshape decoder_output
+        # target = sample['target_dvoc_indices'].view(-1) # get and reshape target
+        # loss = model.decoder.dvoc_layer.computeLoss(decoder_output, target) # compute loss
+        # sample_size = sample['target'].size(0) if self.sentence_avg else sample['ntokens']
+        # # loss /= sample_size
+        # logging_output = {
+        #     'loss': loss.data,
+        #     'ntokens': sample['ntokens'],
+        #     'nsentences': sample['target'].size(0),
+        #     'sample_size': sample_size,
+        # }
+        # return loss, sample_size, logging_output
+        net_output = model(**sample['net_input'])
+        loss, _ = self.compute_loss(model, net_output, sample, reduce=reduce)
         sample_size = sample['target'].size(0) if self.sentence_avg else sample['ntokens']
-        loss /= sample_size
         logging_output = {
             'loss': loss.data,
             'ntokens': sample['ntokens'],
@@ -41,52 +51,18 @@ class SmallSoftmaxCriterion(FairseqCriterion):
         }
         return loss, sample_size, logging_output
 
-    def validation_forward(self, model, sample, reduce=True, greedyProb=1.0):
-        """Compute the loss for the given sample for validation step.
-
-        Returns a tuple with three elements:
-        1) the loss
-        2) the sample size, which is used as the denominator for the gradient
-        3) logging outputs to display while training
-        """
-        encoder_out = model.encoder(sample['net_input']['src_tokens'], sample['net_input']['src_lengths'])
-        dvoc = sample['net_input']['dynamic_vocab']
-        model.decoder.dvoc_layer.setSubset(dvoc)
-        decoder_out, avg_attn_scores = model.decoder(sample['net_input']['prev_output_tokens'], encoder_out=encoder_out, dynamic_vocab=None)
-        sample_size = sample['target'].size(0) if self.sentence_avg else sample['ntokens']
-        
-        rnd = torch.FloatTensor(1).uniform_(0.0, 1.0)[0]
-            
-        def convert_back(sampled_index):
-            for i, s in enumerate(sampled_index):
-                sampled_index[i] = dvoc[i, s]
-            return sampled_index.data
-            
-        if rnd <= greedyProb:
-            maxProb, sampledIndex = torch.max(decoder_out, dim = 1)
-            #convert back to target dictionary indices
-            sampledIndex = convert_back(sampledIndex)
-        else:
-            decoder_out = F.softmax(decoder_out, dim = 1)
-            sampledIndex = torch.multinomial(decoder_out.data, num_samples = 1).squeeze(1)
-            #convert back to target dictionary indices
-            sampledIndex = convert_back(sampledIndex)
-
-        decoder_out = decoder_out.view(-1, decoder_out.size(-1)) # reshape decoder_output
+    def compute_loss(self, model, net_output, sample, reduce=True):
+        lprobs = model.get_normalized_probs(net_output, log_probs=True)
+        lprobs = lprobs.view(-1, lprobs.size(-1))
         target = sample['target_dvoc_indices'].view(-1)
-        loss = model.decoder.dvoc_layer.computeLoss(decoder_out, target)
-        loss /= sample_size
-
-        logging_output = {
-            'loss': loss,
-            'ntokens': sample['ntokens'],
-            'nsentences': sample['target'].size(0),
-            'sample_size': sample_size,
-            'sampled_indices': sampledIndex,
-            'target_indices': target,
-        }
-        return loss, sample_size, logging_output
-
+        loss = F.nll_loss(
+            lprobs,
+            target,
+            ignore_index=self.padding_idx,
+            reduction='sum' if reduce else 'none',
+        )
+        return loss, loss
+        
     @staticmethod
     def reduce_metrics(logging_outputs) -> None:
         """Aggregate logging outputs from data parallel training."""
