@@ -733,8 +733,8 @@ class EnsembleModel(nn.Module):
 
             dvoc = dynamic_vocab[i] if dvoc_enable else None
 
-            print('dvoc', dvoc)
-
+            print('tokens', tokens)
+            
             # decode each model
             if self.has_incremental_states():
                 decoder_out = model.decoder.forward(
