@@ -743,7 +743,7 @@ class EnsembleModel(nn.Module):
                 )
             else:
                 decoder_out = model.decoder.forward(tokens, encoder_out=encoder_out, dynamic_vocab=dvoc)
-            print(decoder_out)
+    
             attn: Optional[Tensor] = None
             decoder_len = len(decoder_out)
             if decoder_len > 1 and decoder_out[1] is not None:
@@ -757,7 +757,7 @@ class EnsembleModel(nn.Module):
                         attn = attn_holder[0]
                 if attn is not None:
                     attn = attn[:, -1, :]
-
+            
             decoder_out_tuple = (
                 decoder_out[0][:, -1:, :].div_(temperature),
                 None if decoder_len <= 1 else decoder_out[1],
@@ -768,6 +768,8 @@ class EnsembleModel(nn.Module):
             )
             probs = probs[:, -1, :]
             if self.models_size == 1:
+                print('probs:', probs.size())
+                print('attn:', attn)
                 return probs, attn
 
             log_probs.append(probs)
