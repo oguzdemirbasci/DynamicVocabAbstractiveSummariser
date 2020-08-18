@@ -264,9 +264,6 @@ class SequenceGenerator(nn.Module):
                     encoder_outs, reorder_state
                 )
                 dvoc = self.model.reorder_dvoc(dvoc, reorder_state, self.enable_dvoc)
-                
-                print('encoder outs', encoder_outs[0].size())
-                print('dvoc', dvoc[0].size())
             dvoc_pass = dvoc[0][:, : step + 1] if self.enable_dvoc else dvoc
             lprobs, avg_attn_scores = self.model.forward_decoder(
                 tokens[:, : step + 1], encoder_outs, self.temperature, dynamic_vocab = dvoc
@@ -746,7 +743,7 @@ class EnsembleModel(nn.Module):
                 )
             else:
                 decoder_out = model.decoder.forward(tokens, encoder_out=encoder_out, dynamic_vocab=dvoc)
-
+            print(decoder_out)
             attn: Optional[Tensor] = None
             decoder_len = len(decoder_out)
             if decoder_len > 1 and decoder_out[1] is not None:
