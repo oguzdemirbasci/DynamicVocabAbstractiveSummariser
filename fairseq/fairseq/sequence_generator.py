@@ -264,9 +264,13 @@ class SequenceGenerator(nn.Module):
                     encoder_outs, reorder_state
                 )
                 dvoc = self.model.reorder_dvoc(dvoc, reorder_state, self.enable_dvoc)
-            dvoc_pass = [dvoc[0][:, : step + 1]] if self.enable_dvoc else dvoc
+                torch.set_printoptions(profile="full")
+                print('encoder outs', encoder_outs)
+                print('dvoc', dvoc)
+                torch.set_printoptions(profile="default") # reset
+            dvoc_pass = dvoc[0][:, : step + 1] if self.enable_dvoc else dvoc
             lprobs, avg_attn_scores = self.model.forward_decoder(
-                tokens[:, : step + 1], encoder_outs, self.temperature, dynamic_vocab = dvoc_pass
+                tokens[:, : step + 1], encoder_outs, self.temperature, dynamic_vocab = dvoc
             )
             lprobs[lprobs != lprobs] = torch.tensor(-math.inf).to(lprobs)
 
