@@ -27,19 +27,6 @@ class SmallSoftmaxCriterion(FairseqCriterion):
         2) the sample size, which is used as the denominator for the gradient
         3) logging outputs to display while training
         """
-        # net_output = model(**sample['net_input']) # net_output = (decoder_output, avg_attn_scores)
-        # decoder_output = net_output[0].view(-1, net_output[0].size(-1)) # reshape decoder_output
-        # target = sample['target_dvoc_indices'].view(-1) # get and reshape target
-        # loss = model.decoder.dvoc_layer.computeLoss(decoder_output, target) # compute loss
-        # sample_size = sample['target'].size(0) if self.sentence_avg else sample['ntokens']
-        # # loss /= sample_size
-        # logging_output = {
-        #     'loss': loss.data,
-        #     'ntokens': sample['ntokens'],
-        #     'nsentences': sample['target'].size(0),
-        #     'sample_size': sample_size,
-        # }
-        # return loss, sample_size, logging_output
         net_output = model(**sample['net_input'])
         loss, _ = self.compute_loss(model, net_output, sample, reduce=reduce)
         sample_size = sample['target'].size(0) if self.sentence_avg else sample['ntokens']

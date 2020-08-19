@@ -37,7 +37,6 @@ class SequenceGenerator(nn.Module):
         enable_dvoc=False,
     ):
         """Generates translations of a given source sentence.
-
         Args:
             models (List[~fairseq.models.FairseqModel]): ensemble of models,
                 currently support fairseq.models.TransformerModel for scripting
@@ -104,7 +103,6 @@ class SequenceGenerator(nn.Module):
         bos_token: Optional[int] = None,
     ):
         """Generate a batch of translations.
-
         Args:
             sample (dict): batch
             prefix_tokens (torch.LongTensor, optional): force decoder to begin
@@ -151,7 +149,6 @@ class SequenceGenerator(nn.Module):
     @torch.no_grad()
     def generate(self, models, sample: Dict[str, Dict[str, Tensor]], **kwargs):
         """Generate translations. Match the api of other fairseq generators.
-
         Args:
             models (List[~fairseq.models.FairseqModel]): ensemble of models
             sample (dict): batch
@@ -202,7 +199,6 @@ class SequenceGenerator(nn.Module):
         new_order = new_order.to(src_tokens.device).long()
         encoder_outs = self.model.reorder_encoder_out(encoder_outs, new_order)
         dvoc = self.model.reorder_dvoc(dvoc, new_order, self.enable_dvoc)
-
         # ensure encoder_outs is a List.
         assert encoder_outs is not None
 
@@ -264,7 +260,6 @@ class SequenceGenerator(nn.Module):
                     encoder_outs, reorder_state
                 )
                 dvoc = self.model.reorder_dvoc(dvoc, reorder_state, self.enable_dvoc)
-            dvoc_pass = dvoc[0][:, : step + 1] if self.enable_dvoc else dvoc
             lprobs, avg_attn_scores = self.model.forward_decoder(
                 tokens[:, : step + 1], encoder_outs, self.temperature, dynamic_vocab = dvoc
             )
@@ -728,11 +723,11 @@ class EnsembleModel(nn.Module):
         for i, model in enumerate(self.models):
             if self.has_encoder():
                 encoder_out = encoder_outs[i]
-            
+
             dvoc_enable = len(dynamic_vocab) > i
 
             dvoc = dynamic_vocab[i] if dvoc_enable else None
-            
+
             # decode each model
             if self.has_incremental_states():
                 decoder_out = model.decoder.forward(
@@ -768,8 +763,6 @@ class EnsembleModel(nn.Module):
             )
             probs = probs[:, -1, :]
             if self.models_size == 1:
-                print('probs:', probs.size())
-                print('attn:', attn)
                 return probs, attn
 
             log_probs.append(probs)
@@ -789,11 +782,9 @@ class EnsembleModel(nn.Module):
     def reorder_encoder_out(self, encoder_outs: Optional[List[EncoderOut]], new_order):
         """
         Reorder encoder output according to *new_order*.
-
         Args:
             encoder_out: output from the ``forward()`` method
             new_order (LongTensor): desired order
-
         Returns:
             *encoder_out* rearranged according to *new_order*
         """
@@ -832,10 +823,8 @@ class EnsembleModel(nn.Module):
 class SequenceGeneratorWithAlignment(SequenceGenerator):
     def __init__(self, models, tgt_dict, left_pad_target=False, **kwargs):
         """Generates translations of a given source sentence.
-
         Produces alignments following "Jointly Learning to Align and
         Translate with Transformer Models" (Garg et al., EMNLP 2019).
-
         Args:
             left_pad_target (bool, optional): Whether or not the
                 hypothesis should be left padded or not when they are
