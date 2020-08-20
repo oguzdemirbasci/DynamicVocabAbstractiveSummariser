@@ -95,8 +95,7 @@ def collate(
     # move unk_idx value to the unk_idx index and eos_idx value to eos_idx index
     swap_idx(unk_idx)
     swap_idx(eos_idx)
-    dvoc = dvoc.index_select(0, sort_order)
-    
+
     batch = {
         'id': id,
         'nsentences': len(samples),
