@@ -161,9 +161,9 @@ class SmallSoftmax(nn.Module):
         
     def forward(self, input, output_list = None, full_softmax = False):
         if output_list is not None:
-            # self.setSubset(output_list)
-            padded_output=torch.cat((torch.zeros(output_list.size(0),4).long().to(output_list.device), output_list), 1)
-            self.setSubset(padded_output)
+            self.setSubset(output_list)
+            # padded_output=torch.cat((torch.ones(output_list.size(0),5).long().to(output_list.device), output_list), 1)
+            # self.setSubset(padded_output)
 
         if full_softmax:
             return F.linear(input, self.weight.weight, self.bias.weight.t())
@@ -543,7 +543,6 @@ class FConvDecoder(FairseqIncrementalDecoder):
 
         # T x B x C -> B x T x C
         x = self._transpose_if_training(x, incremental_state)
-
         if self.enable_dvoc:
             if dynamic_vocab is not None and self.dvoc_layer is not None:
                 x = F.dropout(x, p=self.dropout, training=self.training)

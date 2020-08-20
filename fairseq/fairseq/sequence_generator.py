@@ -260,7 +260,6 @@ class SequenceGenerator(nn.Module):
                     encoder_outs, reorder_state
                 )
                 dvoc = self.model.reorder_dvoc(dvoc, reorder_state, self.enable_dvoc)
-                self.dvocs = dvoc
             lprobs, avg_attn_scores = self.model.forward_decoder(
                 tokens[:, : step + 1], encoder_outs, self.temperature, dynamic_vocab = dvoc
             )
@@ -313,17 +312,18 @@ class SequenceGenerator(nn.Module):
                 lprobs.view(bsz, -1, self.vocab_size),
                 scores.view(bsz, beam_size, -1)[:, :, :step],
             )
+        
+            
+            def convert_tokens_to_target_indices(indices):
+                new_indices = indices.clone()
+                if self.enable_dvoc and step < max_len:
+                    def convert_back(token_indices, dvoc_indices):
+                        for token_index, dvoc_index in enumerate(token_indices):
+                            token_indices[token_index] = dvoc_indices[dvoc_index]
 
-            def convert_tokens_to_target_indices(finalized):
-                if self.enable_dvoc:
-                    def convert_back(tokens, dvoc):
-                        for i, s in enumerate(tokens):
-                            tokens[i] = dvoc[s-4] if tokens[i] > 3 else tokens[i]
-
-                    for f, d in zip(finalized, dvoc[0]):
-                        convert_back(f, d)
-                    
-                return finalized
+                    for index_list, dvoc_item in zip(new_indices, dvoc[0]):
+                        convert_back(index_list, dvoc_item)
+                return new_indices
 
             cand_indices = convert_tokens_to_target_indices(cand_indices)
             # cand_bbsz_idx contains beam indices for the top candidate

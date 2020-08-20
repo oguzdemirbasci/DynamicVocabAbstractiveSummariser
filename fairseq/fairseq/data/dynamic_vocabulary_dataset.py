@@ -80,8 +80,21 @@ def collate(
     # Get dynamic vocavularies
     dvoc = None
     if samples[0].get('dvoc', None) is not None:
-        dvoc = merge('dvoc', left_pad=left_pad_target)
+        dvoc = merge('dvoc', left_pad=False)
         dvoc = dvoc.index_select(0, sort_order)
+        
+    def swap_idx(idx):
+        for i, d in enumerate(dvoc):
+            index_lookup = {e:n for n,e in enumerate(d.numpy())}
+            new_idx = index_lookup[idx]
+            temp = d[new_idx].clone()
+            temp1 = d[idx].clone()
+            d[idx] = temp
+            d[new_idx] = temp1
+
+    # move unk_idx value to the unk_idx index and eos_idx value to eos_idx index
+    swap_idx(unk_idx)
+    swap_idx(eos_idx)
 
     batch = {
         'id': id,
@@ -104,8 +117,7 @@ def collate(
         target_dvoc_indices = list()
         for i, d in enumerate(dvoc):
             index_lookup = {e:n for n,e in enumerate(d.numpy())}
-            target_dvoc_indices.append([index_lookup[e] + 4 if e in d else unk_idx for e in target[i].numpy()])
-        
+            target_dvoc_indices.append([index_lookup[e] if e in d else unk_idx for e in target[i].numpy() ])
         batch['target_dvoc_indices'] = torch.from_numpy(np.array(target_dvoc_indices))
 
     if samples[0].get('alignment', None) is not None:

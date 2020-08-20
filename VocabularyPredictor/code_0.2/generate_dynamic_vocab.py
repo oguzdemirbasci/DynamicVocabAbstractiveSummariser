@@ -156,7 +156,10 @@ def predict_smallvoc(corpus, vocGen, batchSize, K, split = 'train'):
         targetVocGen, inputVocGen = corpus.processBatchInfoVocGen(d, smoothing = False, device = device)
         outputVocGen = vocGen(inputVocGen)
 
-        tmp = F.sigmoid(outputVocGen.data).data + targetVocGen.data
+        if split == 'test':
+            tmp = F.sigmoid(outputVocGen.data).data
+        else:
+            tmp = F.sigmoid(outputVocGen.data).data + targetVocGen.data
         val, output_list = torch.topk(tmp, k = K)
         output_list = output_list.cpu()
         output_list = output_list.numpy()
