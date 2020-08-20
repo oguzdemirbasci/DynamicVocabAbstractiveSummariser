@@ -272,7 +272,7 @@ def _main(args, output_file):
 
     def _report_rouge(gold_path, can_path):
         logger.info("Calculating Rouge")
-        results_dict = rouge.test_rouge(args.results_path, can_path, gold_path)
+        results_dict = rouge.test_rouge(args.results_path + '/tmp', can_path, gold_path)
         return results_dict
 
     if args.compute_rouge:

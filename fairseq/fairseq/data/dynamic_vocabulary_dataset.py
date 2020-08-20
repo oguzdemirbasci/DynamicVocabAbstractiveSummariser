@@ -104,7 +104,7 @@ def collate(
         target_dvoc_indices = list()
         for i, d in enumerate(dvoc):
             index_lookup = {e:n for n,e in enumerate(d.numpy())}
-            target_dvoc_indices.append([index_lookup[e] if e in d else unk_idx for e in target[i].numpy()])
+            target_dvoc_indices.append([index_lookup[e] + 4 if e in d else unk_idx for e in target[i].numpy()])
         
         batch['target_dvoc_indices'] = torch.from_numpy(np.array(target_dvoc_indices))
 

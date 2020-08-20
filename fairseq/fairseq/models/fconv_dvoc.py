@@ -161,9 +161,9 @@ class SmallSoftmax(nn.Module):
         
     def forward(self, input, output_list = None, full_softmax = False):
         if output_list is not None:
-            self.setSubset(output_list)
-            # print('output_list',output_list)
-            # self.setSubset(torch.cat((output_list, torch.ones(output_list.size(0),10).long().to(output_list.device)), 1))
+            # self.setSubset(output_list)
+            padded_output=torch.cat((torch.zeros(output_list.size(0),4).long().to(output_list.device), output_list), 1)
+            self.setSubset(padded_output)
 
         if full_softmax:
             return F.linear(input, self.weight.weight, self.bias.weight.t())

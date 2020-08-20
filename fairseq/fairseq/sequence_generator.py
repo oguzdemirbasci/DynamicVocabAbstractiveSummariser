@@ -67,7 +67,7 @@ class SequenceGenerator(nn.Module):
         self.pad = tgt_dict.pad()
         self.unk = tgt_dict.unk()
         self.eos = tgt_dict.eos() if eos is None else eos
-        self.vocab_size = len(tgt_dict) if dvoc_size is None else dvoc_size
+        self.vocab_size = len(tgt_dict) if dvoc_size is None else (dvoc_size + 4)
         self.beam_size = beam_size
         # the max beam size is the dictionary size - 1, since we never select pad
         self.beam_size = min(beam_size, self.vocab_size - 1)
@@ -260,6 +260,7 @@ class SequenceGenerator(nn.Module):
                     encoder_outs, reorder_state
                 )
                 dvoc = self.model.reorder_dvoc(dvoc, reorder_state, self.enable_dvoc)
+                self.dvocs = dvoc
             lprobs, avg_attn_scores = self.model.forward_decoder(
                 tokens[:, : step + 1], encoder_outs, self.temperature, dynamic_vocab = dvoc
             )
@@ -313,6 +314,18 @@ class SequenceGenerator(nn.Module):
                 scores.view(bsz, beam_size, -1)[:, :, :step],
             )
 
+            def convert_tokens_to_target_indices(finalized):
+                if self.enable_dvoc:
+                    def convert_back(tokens, dvoc):
+                        for i, s in enumerate(tokens):
+                            tokens[i] = dvoc[s-4] if tokens[i] > 3 else tokens[i]
+
+                    for f, d in zip(finalized, dvoc[0]):
+                        convert_back(f, d)
+                    
+                return finalized
+
+            cand_indices = convert_tokens_to_target_indices(cand_indices)
             # cand_bbsz_idx contains beam indices for the top candidate
             # hypotheses, with a range of values: [0, bsz*beam_size),
             # and dimensions: [bsz, cand_size]
@@ -388,19 +401,19 @@ class SequenceGenerator(nn.Module):
             # After, the min values per row are the top candidate active hypos
 
             # Rewrite the operator since the element wise or is not supported in torchscript.
-
+            
             eos_mask[:, :beam_size] = ~((~blacklist) & (~eos_mask[:, :beam_size]))
             active_mask = torch.add(
                 eos_mask.type_as(cand_offsets) * cand_size,
                 cand_offsets[: eos_mask.size(1)],
             )
-
+            
             # get the top beam_size active hypotheses, which are just the hypos
             # with the smallest values in active_mask
             new_blacklist, active_hypos = torch.topk(
                 active_mask, k=beam_size, dim=1, largest=False
             )
-
+            
             # update blacklist to ignore any finalized hypos
             blacklist = new_blacklist.ge(cand_size)[:, :beam_size]
             assert (~blacklist).any(dim=1).all()

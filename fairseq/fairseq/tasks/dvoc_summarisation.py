@@ -350,30 +350,6 @@ class DvocSummarisationTask(FairseqTask):
                 logging_output['_bleu_counts_' + str(i)] = bleu.counts[i]
                 logging_output['_bleu_totals_' + str(i)] = bleu.totals[i]
         return loss, sample_size, logging_output
-
-    def inference_step(self, generator, models, sample, prefix_tokens=None):
-        finalized = super().inference_step(generator, models, sample, prefix_tokens)
-        dvocs = sample['net_input']['dynamic_vocab']
-
-        def convert_tokens_to_target_indices(finalized):
-            if self.enable_dvoc:
-                def convert_back(tokens, dvoc):
-                    for i, s in enumerate(tokens):
-                        tokens[i] = dvoc[s]
-
-                def iterate_over_list(element, dvoc):
-                    if isinstance(element, list):
-                        for e in element:
-                            iterate_over_list(e, dvoc)
-                    elif 'tokens' in element.keys():
-                        # element['tokens'] =
-                        convert_back(element['tokens'], dvoc)
-
-                for f, dvoc in zip(finalized, dvocs):
-                    iterate_over_list(f, dvoc)
-
-        convert_tokens_to_target_indices(finalized)
-        return finalized
         
     def reduce_metrics(self, logging_outputs, criterion):
         super().reduce_metrics(logging_outputs, criterion)
