@@ -28,9 +28,9 @@ def test_rouge(temp_dir, cand, ref):
     current_time = time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())
     tmp_dir = os.path.join(temp_dir, "rouge-tmp-{}".format(current_time))
     if not os.path.isdir(tmp_dir):
-        os.mkdir(tmp_dir)
-        os.mkdir(tmp_dir + "/candidate")
-        os.mkdir(tmp_dir + "/reference")
+        os.makedirs(tmp_dir)
+        os.makedirs(tmp_dir + "/candidate")
+        os.makedirs(tmp_dir + "/reference")
     try:
 
         for i in range(cnt):

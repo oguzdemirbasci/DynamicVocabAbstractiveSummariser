@@ -255,6 +255,16 @@ def _main(args, output_file):
                     else:
                         scorer.add(target_tokens, hypo_tokens)
 
+                    if args.compute_rouge:
+                        can_out_file.write(detok_hypo_str + '\n')
+                        gold_out_file.write(target_str + '\n')
+                        src_out_file.write(src_str.strip() + '\n')
+
+        if args.compute_rouge:
+            can_out_file.flush()
+            gold_out_file.flush()
+            src_out_file.flush()
+
         wps_meter.update(num_generated_tokens)
         progress.log({'wps': round(wps_meter.avg)})
         num_sentences += sample['nsentences']
